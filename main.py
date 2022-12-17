@@ -4,7 +4,6 @@ from pydantic import BaseModel
 import models
 
 class Exercise(BaseModel):
-  id: int
   name: str
   link: str
   musclegroup: str
@@ -20,7 +19,6 @@ def get_exercises():
 @app.post("/exercises", status_code=status.HTTP_201_CREATED)
 def post_exercise(exercise: Exercise):
   new_exercise=models.Exercise(
-    id=exercise.id,
     name=exercise.name,
     link=exercise.link,
     musclegroup=exercise.musclegroup
