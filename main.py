@@ -1,12 +1,23 @@
-from fastapi import FastAPI, status, HTTPException
 from database import Session
 from pydantic import BaseModel
+from fastapi import FastAPI, status, HTTPException
+from utils.password_hasher import hash_password, verify_password
+
 import models
 
 class Exercise(BaseModel):
   name: str
   link: str
   musclegroup: str
+
+class User(BaseModel):
+  username: str
+  email: str
+  password: str
+
+class SigninUser(BaseModel):
+  email: str
+  password: str
 
 app = FastAPI()
 db = Session()
@@ -30,3 +41,36 @@ def post_exercise(exercise: Exercise):
   db.commit()
   
   return new_exercise
+
+@app.post("/signup", status_code=201)
+def signup(user: User):
+  db_email = db.query(models.Users).filter(models.Users.email == user.email).first()
+  db_user = db.query(models.Users).filter(models.Users.username == user.username).first()
+  if not db_email == None:
+    raise HTTPException(status_code=409, detail="User with this email was already created")
+  if not db_user == None:
+    raise HTTPException(status_code=409, detail="User with this username was already registered")
+  
+  hashed_password = hash_password(user.password)
+  
+  new_user=models.Users(
+    username=user.username,
+    email=user.email,
+    password=hashed_password
+  )
+  db.add(new_user)
+  db.commit()
+  return "Ok"
+
+@app.post("/signin", status_code=200)
+def signin(user:SigninUser):
+  db_email = db.query(models.Users).filter(models.Users.email == user.email).first()
+  if db_email == None:
+    raise HTTPException(status_code=404, detail="Couldn't find a user registered with this email")
+  is_password_correct = verify_password(user.password, db_email.password)
+  if is_password_correct == False:
+    raise HTTPException(status_code=403, detail="Incorrect password")
+  return "Ok"
+
+#TODO: Add JWT KEY for sessions
+#TODO: Create folder structure
