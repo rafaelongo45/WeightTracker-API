@@ -1,5 +1,5 @@
 from database import Base
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, ForeignKey
 
 class Exercise(Base):
   __tablename__ = "exercise"
@@ -14,3 +14,9 @@ class Users(Base):
   username = Column(String, unique = True)
   email = Column(String, unique=True)
   password = Column(String)
+  
+class Sessions(Base):
+  __tablename__ = "sessions"
+  id = Column(Integer, primary_key = True)
+  userId = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable = False)
+  key = Column(String, nullable = False)

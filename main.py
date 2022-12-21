@@ -1,9 +1,10 @@
+import models
+
 from database import Session
 from pydantic import BaseModel
 from fastapi import FastAPI, status, HTTPException
 from utils.password_hasher import hash_password, verify_password
-
-import models
+from utils.auth_handler import sign_jwt, decodeJWT
 
 class Exercise(BaseModel):
   name: str
@@ -70,7 +71,14 @@ def signin(user:SigninUser):
   is_password_correct = verify_password(user.password, db_email.password)
   if is_password_correct == False:
     raise HTTPException(status_code=403, detail="Incorrect password")
-  return "Ok"
+  user_id = db_email.id
+  token = sign_jwt(user_id)
+  session = models.Sessions(
+    userId = user_id,
+    key = token["access_token"]
+  )
+  db.add(session)
+  db.commit()
+  return token
 
-#TODO: Add JWT KEY for sessions
 #TODO: Create folder structure
